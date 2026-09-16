@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/notes")
 public class ControllerNote {
@@ -18,5 +20,36 @@ public class ControllerNote {
     public ResponseEntity<Note> createNote(@RequestBody Note note) {
         Note savedNote = noteRepository.save(note);
         return new ResponseEntity<>(savedNote, HttpStatus.CREATED);
+    }
+    @GetMapping
+    public ResponseEntity<List<Note>> getAllNotes() {
+        List<Note> notes = noteRepository.findAll();
+        return new ResponseEntity<>(notes, HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Note> getNoteById(@PathVariable Long id) {
+        return noteRepository.findById(id)
+                .map(note -> new ResponseEntity<>(note, HttpStatus.OK))
+                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
+    @PutMapping("/{id}")
+    public ResponseEntity<Note> updateNote(@PathVariable Long id, @RequestBody Note noteDetails) {
+        return noteRepository.findById(id)
+                .map(existingNote -> {
+                    existingNote.setTitle(noteDetails.getTitle());
+                    existingNote.setContent(noteDetails.getContent());
+                    Note updatedNote = noteRepository.save(existingNote);
+                    return new ResponseEntity<>(updatedNote, HttpStatus.OK);
+                })
+                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteNote(@PathVariable Long id) {
+        if (!noteRepository.existsById(id)) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        noteRepository.deleteById(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }
