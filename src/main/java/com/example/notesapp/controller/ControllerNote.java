@@ -2,7 +2,6 @@ package com.example.notesapp.controller;
 
 import com.example.notesapp.model.Note;
 import com.example.notesapp.repository.RepositoryNote;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -15,13 +14,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/notes")
 public class ControllerNote {
 
-    @Autowired
-    private RepositoryNote noteRepository;
+    private final RepositoryNote noteRepository;
+
+    public ControllerNote(RepositoryNote noteRepository) {
+        this.noteRepository = noteRepository;
+    }
 
     @PostMapping
     public ResponseEntity<Note> createNote(@RequestBody Note note) {
@@ -36,14 +39,14 @@ public class ControllerNote {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Note> getNoteById(@PathVariable Long id) {
+    public ResponseEntity<Note> getNoteById(@PathVariable UUID id) {
         return noteRepository.findById(id)
                 .map(note -> new ResponseEntity<>(note, HttpStatus.OK))
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Note> updateNote(@PathVariable Long id, @RequestBody Note noteDetails) {
+    public ResponseEntity<Note> updateNote(@PathVariable UUID id, @RequestBody Note noteDetails) {
         return noteRepository.findById(id)
                 .map(existingNote -> {
                     existingNote.setTitle(noteDetails.getTitle());
@@ -55,7 +58,7 @@ public class ControllerNote {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteNote(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteNote(@PathVariable UUID id) {
         if (!noteRepository.existsById(id)) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }

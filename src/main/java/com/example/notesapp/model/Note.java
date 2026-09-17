@@ -1,4 +1,3 @@
-
 package com.example.notesapp.model;
 
 import jakarta.persistence.Entity;
@@ -6,15 +5,16 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
+import java.util.UUID;
+
 @Entity
 public class Note {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     private String title;
-
 
     private String content;
 
@@ -26,7 +26,7 @@ public class Note {
         this.content = content;
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
