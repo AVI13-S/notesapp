@@ -3,6 +3,7 @@ package com.example.notesapp.model;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.persistence.Id;
 
 import java.util.UUID;
@@ -13,9 +14,9 @@ public class Note {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-
+    @NotBlank(message="Title should not be empty")
     private String title;
-
+    @NotBlank(message="Content should not be empty")
     private String content;
 
     public Note() {
