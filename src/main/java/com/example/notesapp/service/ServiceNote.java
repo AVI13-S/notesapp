@@ -1,7 +1,9 @@
 package com.example.notesapp.service;
+
 import com.example.notesapp.model.Note;
 import com.example.notesapp.repository.RepositoryNote;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -11,12 +13,18 @@ import java.util.UUID;
 public class ServiceNote {
 
     private final RepositoryNote noteRepository;
+    private final S3Service s3Service;
 
-    public ServiceNote(RepositoryNote noteRepository) {
+    public ServiceNote(RepositoryNote noteRepository, S3Service s3Service) {
         this.noteRepository = noteRepository;
+        this.s3Service = s3Service;
     }
 
-    public Note createNote(Note note) {
+    public Note createNote(Note note, MultipartFile image) {
+        String imageUrl = s3Service.uploadFile(image);
+        if (imageUrl != null) {
+            note.setImageUrl(imageUrl);
+        }
         return noteRepository.save(note);
     }
 
@@ -28,18 +36,18 @@ public class ServiceNote {
         return noteRepository.findById(id);
     }
 
-    public Optional<Note> updateNote(UUID id, Note noteDetails) {
-        Optional<Note> existingNoteOptional = noteRepository.findById(id);
+    public Optional<Note> updateNote(UUID id, Note noteDetails, MultipartFile image) {
+        return noteRepository.findById(id).map(existingNote -> {
+            existingNote.setTitle(noteDetails.getTitle());
+            existingNote.setContent(noteDetails.getContent());
 
-        if (existingNoteOptional.isEmpty()) {
-            return Optional.empty();
-        }
+            String imageUrl = s3Service.uploadFile(image);
+            if (imageUrl != null) {
+                existingNote.setImageUrl(imageUrl);
+            }
 
-        Note existingNote = existingNoteOptional.get();
-        existingNote.setTitle(noteDetails.getTitle());
-        existingNote.setContent(noteDetails.getContent());
-        Note updatedNote = noteRepository.save(existingNote);
-        return Optional.of(updatedNote);
+            return noteRepository.save(existingNote);
+        });
     }
 
     public boolean deleteNote(UUID id) {

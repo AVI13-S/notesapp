@@ -27,8 +27,11 @@ public class Note {
     @NotBlank(message = "Content should not be empty")
     private String content;
 
-    public Note(String title, String content) {
+    private String imageUrl;
+
+    public Note(String title, String content ,String imageUrl) {
         this.title = title;
         this.content = content;
+        this.imageUrl = imageUrl;
     }
 }
