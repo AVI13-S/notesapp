@@ -56,7 +56,7 @@ public class S3Service {
             s3Client.putObject(putObjectRequest,
                     RequestBody.fromBytes(file.getBytes()));
 
-            // Returns the public URL pointing to the image in S3
+
             return String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, fileName);
         } catch (IOException e) {
             throw new RuntimeException("Failed to upload image to S3", e);
