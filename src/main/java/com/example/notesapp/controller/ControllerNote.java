@@ -1,8 +1,7 @@
 package com.example.notesapp.controller;
 
-import com.example.notesapp.model.Note;
+import com.example.notesapp.dto.NoteResponse;
 import com.example.notesapp.service.ServiceNote;
-import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,32 +20,36 @@ public class ControllerNote {
         this.noteService = noteService;
     }
 
-    @PostMapping(consumes = {"multipart/form-data"})
-    public ResponseEntity<Note> createNote(
-            @Valid @RequestPart("note") Note note,
-            @RequestPart(value = "image", required = false) MultipartFile image) {
-        Note savedNote = noteService.createNote(note, image);
+    @PostMapping(consumes = "multipart/form-data")
+    public ResponseEntity<NoteResponse> createNote(
+            @RequestParam("title") String title,
+            @RequestParam("content") String content,
+            @RequestParam(value = "image", required = false) MultipartFile image) {
+
+        NoteResponse savedNote = noteService.createNote(title, content, image);
         return new ResponseEntity<>(savedNote, HttpStatus.CREATED);
     }
 
-    @GetMapping
-    public ResponseEntity<List<Note>> getAllNotes() {
-        return ResponseEntity.ok(noteService.getAllNotes());
-    }
+    @PutMapping(value = "/{id}", consumes = "multipart/form-data")
+    public ResponseEntity<NoteResponse> updateNote(
+            @PathVariable UUID id,
+            @RequestParam("title") String title,
+            @RequestParam("content") String content,
+            @RequestParam(value = "image", required = false) MultipartFile image) {
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Note> getNoteById(@PathVariable UUID id) {
-        return noteService.getNoteById(id)
+        return noteService.updateNote(id, title, content, image)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PutMapping(value = "/{id}", consumes = {"multipart/form-data"})
-    public ResponseEntity<Note> updateNote(
-            @PathVariable UUID id,
-            @Valid @RequestPart("note") Note noteDetails,
-            @RequestPart(value = "image", required = false) MultipartFile image) {
-        return noteService.updateNote(id, noteDetails, image)
+    @GetMapping
+    public ResponseEntity<List<NoteResponse>> getAllNotes() {
+        return ResponseEntity.ok(noteService.getAllNotes());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<NoteResponse> getNoteById(@PathVariable UUID id) {
+        return noteService.getNoteById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

@@ -1,9 +1,13 @@
 package com.example.notesapp.service;
 
+import com.example.notesapp.dto.NoteMapper;
+import com.example.notesapp.dto.NoteResponse;
 import com.example.notesapp.model.Note;
 import com.example.notesapp.repository.RepositoryNote;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,41 +24,59 @@ public class ServiceNote {
         this.s3Service = s3Service;
     }
 
-    public Note createNote(Note note, MultipartFile image) {
+    public NoteResponse createNote(String title, String content, MultipartFile image) {
+        validate(title, content);
+
         String imageUrl = s3Service.uploadFile(image);
-        if (imageUrl != null) {
-            note.setImageUrl(imageUrl);
-        }
-        return noteRepository.save(note);
+        Note note = new Note(title.trim(), content.trim(), imageUrl);
+        Note saved = noteRepository.save(note);
+        return NoteMapper.toResponse(saved);
     }
 
-    public List<Note> getAllNotes() {
-        return noteRepository.findAll();
+    public List<NoteResponse> getAllNotes() {
+        return noteRepository.findAll().stream()
+                .map(NoteMapper::toResponse)
+                .toList();
     }
 
-    public Optional<Note> getNoteById(UUID id) {
-        return noteRepository.findById(id);
+    public Optional<NoteResponse> getNoteById(UUID id) {
+        return noteRepository.findById(id).map(NoteMapper::toResponse);
     }
 
-    public Optional<Note> updateNote(UUID id, Note noteDetails, MultipartFile image) {
+    public Optional<NoteResponse> updateNote(UUID id, String title, String content, MultipartFile image) {
+        validate(title, content);
+
         return noteRepository.findById(id).map(existingNote -> {
-            existingNote.setTitle(noteDetails.getTitle());
-            existingNote.setContent(noteDetails.getContent());
+            existingNote.setTitle(title.trim());
+            existingNote.setContent(content.trim());
 
-            String imageUrl = s3Service.uploadFile(image);
-            if (imageUrl != null) {
-                existingNote.setImageUrl(imageUrl);
+            if (image != null && !image.isEmpty()) {
+                s3Service.deleteFile(existingNote.getImageUrl());
+                existingNote.setImageUrl(s3Service.uploadFile(image));
             }
 
-            return noteRepository.save(existingNote);
+            Note saved = noteRepository.save(existingNote);
+            return NoteMapper.toResponse(saved);
         });
     }
 
     public boolean deleteNote(UUID id) {
-        if (!noteRepository.existsById(id)) {
+        Optional<Note> note = noteRepository.findById(id);
+        if (note.isEmpty()) {
             return false;
         }
+
+        s3Service.deleteFile(note.get().getImageUrl());
         noteRepository.deleteById(id);
         return true;
+    }
+
+    private void validate(String title, String content) {
+        if (title == null || title.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Title should not be empty");
+        }
+        if (content == null || content.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Content should not be empty");
+        }
     }
 }
